@@ -67,6 +67,24 @@ python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
+### 3.1 真机联调放通 Windows 防火墙
+
+如果小程序真机联调出现 `ERR_CONNECTION_TIMED_OUT`，通常是手机无法访问电脑的 `8000` 入站端口。
+请用“以管理员身份运行”的 PowerShell 执行：
+
+```powershell
+cd E:\AI-projects\art-api
+.\scripts\allow-miniapp-lan.ps1
+```
+
+脚本会完成：
+
+- 将 WLAN 网络从公共网络切换为专用网络。
+- 放通本机 TCP `8000` 入站端口。
+- 输出小程序应使用的局域网接口地址。
+
+执行后再用 `0.0.0.0` 启动后端，并在手机浏览器打开脚本输出的 `/api/v1/health` 地址验证。
+
 后端服务地址：
 
 - http://127.0.0.1:8000

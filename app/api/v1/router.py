@@ -11,6 +11,7 @@ from app.api.v1.endpoints import (
     cart,
     categories,
     health,
+    orders,
     users,
 )
 
@@ -30,6 +31,9 @@ api_router.include_router(users.router, prefix="/users", tags=["users"])
 
 # 小程序购物车接口：登录后管理作品购物车，价格和库存以服务端实时数据为准。
 api_router.include_router(cart.router, prefix="/users/cart", tags=["cart"])
+
+# 小程序订单接口：从购物车创建订单，并提供订单列表、详情和状态流转能力。
+api_router.include_router(orders.router, prefix="/users/orders", tags=["orders"])
 
 # 后台管理员认证接口：后台登录、刷新当前用户等能力放在这个分组。
 api_router.include_router(admin_auth.router, prefix="/admin/auth", tags=["admin-auth"])

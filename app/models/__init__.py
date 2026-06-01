@@ -12,6 +12,7 @@ from app.models.exhibition import Exhibition
 from app.models.exhibition_artwork import ExhibitionArtwork
 from app.models.favorite import Favorite
 from app.models.operation_log import OperationLog
+from app.models.order import Order, OrderItem
 from app.models.user import User
 
 __all__ = [
@@ -27,5 +28,7 @@ __all__ = [
     "ExhibitionArtwork",
     "Favorite",
     "OperationLog",
+    "Order",
+    "OrderItem",
     "User",
 ]
