@@ -1,11 +1,11 @@
-from datetime import datetime, timezone
+﻿from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import func, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_admin
+from app.api.deps import get_current_operable_admin
 from app.api.v1.endpoints.artworks import _build_artwork_filters, _to_artwork_detail
 from app.db.session import get_db
 from app.models.admin import Admin
@@ -131,7 +131,7 @@ def list_admin_artworks(
     category: str | None = Query(default=None, max_length=100),
     year: int | None = Query(default=None, ge=0, le=9999),
     db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_admin),
+    current_admin: Admin = Depends(get_current_operable_admin),
 ) -> ApiResponse[ArtworkListResponse]:
     """后台分页查询作品概览。
 
@@ -178,7 +178,7 @@ def create_admin_artwork(
     payload: AdminArtworkCreateRequest,
     request: Request,
     db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_admin),
+    current_admin: Admin = Depends(get_current_operable_admin),
 ) -> ApiResponse[ArtworkDetail]:
     """后台创建作品。"""
     _ensure_artist_exists(db, payload.artist_id)
@@ -234,7 +234,7 @@ def update_admin_artwork(
     payload: AdminArtworkUpdateRequest,
     request: Request,
     db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_admin),
+    current_admin: Admin = Depends(get_current_operable_admin),
 ) -> ApiResponse[ArtworkDetail]:
     """后台更新作品。"""
     artwork = _get_artwork_or_404(db, artwork_id)
@@ -293,7 +293,7 @@ def delete_admin_artwork(
     artwork_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_admin),
+    current_admin: Admin = Depends(get_current_operable_admin),
 ) -> ApiResponse[AdminArtworkDeleteResponse]:
     """后台删除作品。"""
     artwork = _get_artwork_or_404(db, artwork_id)
@@ -310,3 +310,4 @@ def delete_admin_artwork(
     _commit_or_500(db, "作品删除失败，请稍后重试")
 
     return ApiResponse(data=AdminArtworkDeleteResponse(id=artwork_id))
+

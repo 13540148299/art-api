@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 from jose import jwt
 
 from app.core.config import settings
-from app.core.security import create_access_token, get_password_hash
+from app.core.security import create_access_token, get_password_hash, verify_password
 from app.db.session import get_db
 from app.main import app
 from app.models.admin import Admin
@@ -22,13 +22,16 @@ class _ScalarResult:
 class FakeSession:
     """用于登录接口测试的轻量会话，避免依赖真实 PostgreSQL。"""
 
-    def __init__(self, admin: Admin | None) -> None:
+    def __init__(self, admin: Admin | None, execute_results: list[Admin | None] | None = None) -> None:
         self.admin = admin
+        self.execute_results = execute_results or []
         self.added: list[object] = []
         self.committed = False
         self.rolled_back = False
 
     def execute(self, statement: object) -> _ScalarResult:
+        if self.execute_results:
+            return _ScalarResult(self.execute_results.pop(0))
         return _ScalarResult(self.admin)
 
     def add(self, entity: object) -> None:
@@ -52,6 +55,7 @@ def _build_admin(status: str = "active") -> Admin:
     return Admin(
         id=1,
         username="admin",
+        avatar_url=None,
         password_hash=get_password_hash("correct-password"),
         role="super_admin",
         status=status,
@@ -135,9 +139,80 @@ def test_admin_me_returns_current_admin() -> None:
     assert response.json()["data"] == {
         "id": 1,
         "username": "admin",
+        "avatar_url": None,
         "role": "super_admin",
         "status": "active",
+        "must_change_password": False,
     }
+
+
+def test_admin_update_me_updates_profile_and_password() -> None:
+    admin = _build_admin()
+    session = FakeSession(admin, execute_results=[admin, None])
+    _override_db(session)
+    client = TestClient(app)
+    token = create_access_token(subject="1", claims={"role": "super_admin"})
+
+    response = client.patch(
+        "/api/v1/admin/auth/me",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "username": "operator",
+            "avatar_url": "/uploads/avatars/admin.png",
+            "current_password": "correct-password",
+            "new_password": "new-password",
+        },
+    )
+
+    app.dependency_overrides.clear()
+    assert response.status_code == 200
+    assert response.json()["data"]["username"] == "operator"
+    assert response.json()["data"]["avatar_url"] == "/uploads/avatars/admin.png"
+    assert response.json()["data"]["must_change_password"] is False
+    assert admin.username == "operator"
+    assert admin.avatar_url == "/uploads/avatars/admin.png"
+    assert verify_password("new-password", admin.password_hash)
+    assert session.committed is True
+    assert any(isinstance(entity, OperationLog) for entity in session.added)
+
+
+def test_admin_update_me_rejects_wrong_current_password() -> None:
+    admin = _build_admin()
+    session = FakeSession(admin, execute_results=[admin])
+    _override_db(session)
+    client = TestClient(app)
+    token = create_access_token(subject="1", claims={"role": "super_admin"})
+
+    response = client.patch(
+        "/api/v1/admin/auth/me",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"current_password": "wrong-password", "new_password": "new-password"},
+    )
+
+    app.dependency_overrides.clear()
+    assert response.status_code == 400
+    assert response.json()["detail"] == "当前密码不正确"
+    assert session.committed is False
+
+
+def test_admin_update_me_clears_initial_password_flag() -> None:
+    admin = _build_admin()
+    admin.must_change_password = True
+    session = FakeSession(admin, execute_results=[admin])
+    _override_db(session)
+    client = TestClient(app)
+    token = create_access_token(subject="1", claims={"role": "operator"})
+
+    response = client.patch(
+        "/api/v1/admin/auth/me",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"current_password": "correct-password", "new_password": "new-password"},
+    )
+
+    app.dependency_overrides.clear()
+    assert response.status_code == 200
+    assert response.json()["data"]["must_change_password"] is False
+    assert admin.must_change_password is False
 
 
 def test_admin_me_rejects_missing_token() -> None:

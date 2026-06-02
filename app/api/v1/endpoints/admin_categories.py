@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+﻿from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import exists, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_admin
+from app.api.deps import get_current_operable_admin
 from app.db.session import get_db
 from app.models.admin import Admin
 from app.models.artwork import Artwork
@@ -129,7 +129,7 @@ def _commit_or_500(db: Session, message: str) -> None:
 def list_admin_categories(
     category_status: CategoryStatus | None = Query(default=None, alias="status"),
     db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_admin),
+    current_admin: Admin = Depends(get_current_operable_admin),
 ) -> ApiResponse[AdminCategoryListResponse]:
     """后台查询分类列表。
 
@@ -157,7 +157,7 @@ def create_admin_category(
     payload: AdminCategoryCreateRequest,
     request: Request,
     db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_admin),
+    current_admin: Admin = Depends(get_current_operable_admin),
 ) -> ApiResponse[AdminCategoryItem]:
     """后台创建分类。"""
     _ensure_parent_valid(db, payload.parent_id)
@@ -197,7 +197,7 @@ def create_admin_category(
 def get_admin_category(
     category_id: int,
     db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_admin),
+    current_admin: Admin = Depends(get_current_operable_admin),
 ) -> ApiResponse[AdminCategoryItem]:
     """后台查询分类详情。"""
     category = _get_category_or_404(db, category_id)
@@ -210,7 +210,7 @@ def update_admin_category(
     payload: AdminCategoryUpdateRequest,
     request: Request,
     db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_admin),
+    current_admin: Admin = Depends(get_current_operable_admin),
 ) -> ApiResponse[AdminCategoryItem]:
     """后台更新分类。"""
     category = _get_category_or_404(db, category_id)
@@ -249,7 +249,7 @@ def delete_admin_category(
     category_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_admin),
+    current_admin: Admin = Depends(get_current_operable_admin),
 ) -> ApiResponse[AdminCategoryDeleteResponse]:
     """后台删除分类。
 
@@ -274,3 +274,4 @@ def delete_admin_category(
     _commit_or_500(db, "分类删除失败，请稍后重试")
 
     return ApiResponse(data=AdminCategoryDeleteResponse(id=category_id))
+

@@ -1,9 +1,9 @@
-from pathlib import Path
+﻿from pathlib import Path
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
-from app.api.deps import get_current_admin
+from app.api.deps import get_current_operable_admin
 from app.models.admin import Admin
 from app.schemas.common import ApiResponse
 
@@ -30,7 +30,7 @@ ALLOWED_VIDEO_TYPES = {
 @router.post("/avatars", response_model=ApiResponse[dict[str, str]])
 async def upload_avatar(
     file: UploadFile = File(...),
-    current_admin: Admin = Depends(get_current_admin),
+    current_admin: Admin = Depends(get_current_operable_admin),
 ) -> ApiResponse[dict[str, str]]:
     """上传艺术家头像图片。
 
@@ -61,7 +61,7 @@ async def upload_avatar(
 @router.post("/artworks", response_model=ApiResponse[dict[str, str]])
 async def upload_artwork_media(
     file: UploadFile = File(...),
-    current_admin: Admin = Depends(get_current_admin),
+    current_admin: Admin = Depends(get_current_operable_admin),
 ) -> ApiResponse[dict[str, str]]:
     """上传作品展示资源。
 
@@ -94,3 +94,4 @@ async def upload_artwork_media(
     target_path.write_bytes(content)
 
     return ApiResponse(data={"url": f"/uploads/artworks/{filename}", "media_type": media_type})
+

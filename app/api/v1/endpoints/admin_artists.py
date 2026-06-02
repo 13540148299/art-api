@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+﻿from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import exists, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_admin
+from app.api.deps import get_current_operable_admin
 from app.db.session import get_db
 from app.models.admin import Admin
 from app.models.artist import Artist
@@ -99,7 +99,7 @@ def list_admin_artists(
     artist_status: ArtistStatus | None = Query(default=None, alias="status"),
     keyword: str | None = Query(default=None),
     db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_admin),
+    current_admin: Admin = Depends(get_current_operable_admin),
 ) -> ApiResponse[AdminArtistListResponse]:
     """后台查询艺术家列表。
 
@@ -125,7 +125,7 @@ def create_admin_artist(
     payload: AdminArtistCreateRequest,
     request: Request,
     db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_admin),
+    current_admin: Admin = Depends(get_current_operable_admin),
 ) -> ApiResponse[AdminArtistItem]:
     """后台创建艺术家。"""
     artist = Artist(
@@ -164,7 +164,7 @@ def create_admin_artist(
 def get_admin_artist(
     artist_id: int,
     db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_admin),
+    current_admin: Admin = Depends(get_current_operable_admin),
 ) -> ApiResponse[AdminArtistItem]:
     """后台查询艺术家详情。"""
     artist = _get_artist_or_404(db, artist_id)
@@ -177,7 +177,7 @@ def update_admin_artist(
     payload: AdminArtistUpdateRequest,
     request: Request,
     db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_admin),
+    current_admin: Admin = Depends(get_current_operable_admin),
 ) -> ApiResponse[AdminArtistItem]:
     """后台更新艺术家。"""
     artist = _get_artist_or_404(db, artist_id)
@@ -216,7 +216,7 @@ def delete_admin_artist(
     artist_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_admin),
+    current_admin: Admin = Depends(get_current_operable_admin),
 ) -> ApiResponse[AdminArtistDeleteResponse]:
     """后台删除艺术家。
 
@@ -239,3 +239,4 @@ def delete_admin_artist(
     _commit_or_500(db, "艺术家删除失败，请稍后重试")
 
     return ApiResponse(data=AdminArtistDeleteResponse(id=artist_id))
+

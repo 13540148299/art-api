@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from app.api.v1.endpoints import (
     admin_artists,
     admin_artworks,
+    admin_admins,
     admin_auth,
     admin_categories,
     admin_dashboard,
@@ -37,6 +38,9 @@ api_router.include_router(orders.router, prefix="/users/orders", tags=["orders"]
 
 # 后台管理员认证接口：后台登录、刷新当前用户等能力放在这个分组。
 api_router.include_router(admin_auth.router, prefix="/admin/auth", tags=["admin-auth"])
+
+# 后台管理员账号管理接口：仅超级管理员可以维护普通管理员。
+api_router.include_router(admin_admins.router, prefix="/admin/admins", tags=["admin-admins"])
 
 # 后台工作台概览接口：只返回首页统计和少量最近作品，避免后台首页加载完整管理列表。
 api_router.include_router(admin_dashboard.router, prefix="/admin/dashboard", tags=["admin-dashboard"])

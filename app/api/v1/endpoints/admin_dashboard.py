@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends
+﻿from fastapi import APIRouter, Depends
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_admin
+from app.api.deps import get_current_operable_admin
 from app.db.session import get_db
 from app.models.admin import Admin
 from app.models.artist import Artist
@@ -18,7 +18,7 @@ router = APIRouter()
 @router.get("", response_model=ApiResponse[AdminDashboardResponse])
 def get_admin_dashboard(
     db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_admin),
+    current_admin: Admin = Depends(get_current_operable_admin),
 ) -> ApiResponse[AdminDashboardResponse]:
     """查询后台工作台概览数据。
 
@@ -57,6 +57,7 @@ def get_admin_dashboard(
             display_url=artwork.media_url or artwork.cover_url or "",
             display_type=artwork.media_type if artwork.media_type in {"image", "video"} else "image",
             description=artwork.description,
+            status=artwork.status,
             material=artwork.material,
             price=artwork.price or 0,
             stock_count=artwork.stock_count or 0,
@@ -74,3 +75,4 @@ def get_admin_dashboard(
             recent_artworks=recent_artworks,
         )
     )
+

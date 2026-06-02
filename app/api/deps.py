@@ -47,6 +47,29 @@ def get_current_admin(
     return admin
 
 
+def get_current_operable_admin(current_admin: Admin = Depends(get_current_admin)) -> Admin:
+    """获取可正常操作后台业务的管理员。
+
+    使用初始化密码登录的管理员必须先修改密码，修改前只允许访问认证和个人资料接口。
+    """
+    if current_admin.must_change_password:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="请先修改初始密码后再使用后台功能",
+        )
+    return current_admin
+
+
+def get_current_super_admin(current_admin: Admin = Depends(get_current_operable_admin)) -> Admin:
+    """获取当前超级管理员，用于管理员账号管理等高权限操作。"""
+    if current_admin.role != "super_admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="仅超级管理员可以执行该操作",
+        )
+    return current_admin
+
+
 def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),

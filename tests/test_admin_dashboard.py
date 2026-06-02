@@ -87,3 +87,4 @@ def test_admin_dashboard_returns_counts_and_recent_artworks() -> None:
     assert response.json()["data"]["hidden_count"] == 3
     assert len(response.json()["data"]["recent_artworks"]) == 5
     assert response.json()["data"]["recent_artworks"][0]["artist_name"] == "林微"
+    assert response.json()["data"]["recent_artworks"][0]["status"] == "published"
